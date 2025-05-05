@@ -1,9 +1,10 @@
 import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection, BeforeCreate } from "@mikro-orm/core";
-import { Field, ID, ObjectType } from "type-graphql";
+import { Field, Float, ID, Int, ObjectType } from "type-graphql";
 import { Category } from "./Category";
 import { ProductVariation } from "../entities/ProductVar";
 import { Company } from "./Company";
 import slugify from "slugify";
+import { Review } from "./Reviews";
 
 @ObjectType()
 @Entity()
@@ -50,6 +51,18 @@ export class Product {
 
   @ManyToOne(() => Company)
   company!: Company;
+
+  @Field(() => [Review])
+  @OneToMany(() => Review, (review) => review.product)
+  reviews = new Collection<Review>(this);
+
+  @Field(() => Float, { nullable: true })
+  @Property({ nullable: true })
+  averageRating?: number;
+
+  @Field(() => Int, { nullable: true })
+  @Property({ nullable: true })
+  reviewCount?: number;
 
   @BeforeCreate()
   generateSlug() {

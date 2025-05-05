@@ -1,4 +1,4 @@
-import { Resolver, Query, Ctx, Arg, Mutation } from "type-graphql";
+import { Resolver, Query, Ctx, Arg, Mutation, Int, FieldResolver, Root } from "type-graphql";
 import { MyContext } from "../types";
 import { Product } from "../entities/Products";
 import { ProductInput } from "../inputs/ProductInput";
@@ -6,15 +6,18 @@ import { Category } from "../entities/Category";
 import { Company } from "../entities/Company";
 import { ProductVariation } from "../entities/ProductVar";
 import slugify from "slugify";
+import { Review } from "../entities/Reviews";
 
-@Resolver()
+@Resolver(()=> Product)
 export class ProductResolver {
   @Query(() => [Product])
   async myProducts(@Ctx() { em, req }: MyContext): Promise<Product[]> {
     if (!req.session.companyId) {
       throw new Error("Not authenticated");
     }
-    return await em.find(Product, { company: req.session.companyId });
+    return await em.find(Product, { company: req.session.companyId }, {
+      populate: ['reviews', 'variations']
+    });
   }
 
   @Query(() => [Product])
@@ -86,6 +89,22 @@ export class ProductResolver {
     return await em.find(Product, filters, { populate: ["category"] });
   }
 
+  @Query(() => [Product])
+  async topRatedProducts(
+    @Arg("limit", () => Int, { defaultValue: 5 }) limit: number,
+    @Ctx() { em }: MyContext
+  ): Promise<Product[]> {
+    return em.find(
+      Product,
+      {},
+      {
+        orderBy: { averageRating: "DESC" },
+        limit,
+        populate: ["reviews"]
+      }
+    );
+  }
+
   @Mutation(() => Product)
   async createProduct(
     @Arg("input", () => ProductInput) input: ProductInput,
@@ -110,6 +129,8 @@ export class ProductResolver {
       category,
       company,
       slug,
+      averageRating: 0,
+      reviewCount: 0,
       variations: [],
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -144,12 +165,18 @@ export class ProductResolver {
     return product;
   }
 
+  @FieldResolver(() => [Review])
+  async reviews(@Root() product: Product, @Ctx() { em }: MyContext) {
+    await em.populate(product, ["reviews"]);
+    return product.reviews;
+  }
+
   @Query(() => Product, { nullable: true })
   async productBySlug(
     @Arg("slug") slug: string,
     @Ctx() { em }: MyContext
   ): Promise<Product | null> {
-    return await em.findOne(Product, { slug }, { populate: ["variations", "category"] });
+    return await em.findOne(Product, { slug }, { populate: ["variations", "category", 'reviews.user'] });
   }
 
   @Query(() => [Product])

@@ -19,10 +19,12 @@ const Category_1 = require("./Category");
 const ProductVar_1 = require("../entities/ProductVar");
 const Company_1 = require("./Company");
 const slugify_1 = __importDefault(require("slugify"));
+const Reviews_1 = require("./Reviews");
 let Product = class Product {
     constructor() {
         this.id = crypto.randomUUID();
         this.variations = new core_1.Collection(this);
+        this.reviews = new core_1.Collection(this);
         this.createdAt = new Date();
         this.updatedAt = new Date();
     }
@@ -87,6 +89,21 @@ __decorate([
     (0, core_1.ManyToOne)(() => Company_1.Company),
     __metadata("design:type", Company_1.Company)
 ], Product.prototype, "company", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(() => [Reviews_1.Review]),
+    (0, core_1.OneToMany)(() => Reviews_1.Review, (review) => review.product),
+    __metadata("design:type", Object)
+], Product.prototype, "reviews", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(() => type_graphql_1.Float, { nullable: true }),
+    (0, core_1.Property)({ nullable: true }),
+    __metadata("design:type", Number)
+], Product.prototype, "averageRating", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(() => type_graphql_1.Int, { nullable: true }),
+    (0, core_1.Property)({ nullable: true }),
+    __metadata("design:type", Number)
+], Product.prototype, "reviewCount", void 0);
 __decorate([
     (0, core_1.BeforeCreate)(),
     __metadata("design:type", Function),

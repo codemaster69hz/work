@@ -23,12 +23,15 @@ const Category_1 = require("../entities/Category");
 const Company_1 = require("../entities/Company");
 const ProductVar_1 = require("../entities/ProductVar");
 const slugify_1 = __importDefault(require("slugify"));
+const Reviews_1 = require("../entities/Reviews");
 let ProductResolver = class ProductResolver {
     async myProducts({ em, req }) {
         if (!req.session.companyId) {
             throw new Error("Not authenticated");
         }
-        return await em.find(Products_1.Product, { company: req.session.companyId });
+        return await em.find(Products_1.Product, { company: req.session.companyId }, {
+            populate: ['reviews', 'variations']
+        });
     }
     async getSimilarProducts(category, productId, { em }) {
         const categoryEntity = await em.findOne(Category_1.Category, { name: category });
@@ -78,6 +81,13 @@ let ProductResolver = class ProductResolver {
         }
         return await em.find(Products_1.Product, filters, { populate: ["category"] });
     }
+    async topRatedProducts(limit, { em }) {
+        return em.find(Products_1.Product, {}, {
+            orderBy: { averageRating: "DESC" },
+            limit,
+            populate: ["reviews"]
+        });
+    }
     async createProduct(input, { em, req }) {
         if (!req.session.companyId) {
             throw new Error("Not authenticated");
@@ -92,7 +102,7 @@ let ProductResolver = class ProductResolver {
         const slug = (0, slugify_1.default)(input.name, { lower: true, strict: true });
         const product = em.create(Products_1.Product, Object.assign(Object.assign({}, input), { category,
             company,
-            slug, variations: [], createdAt: new Date(), updatedAt: new Date() }));
+            slug, averageRating: 0, reviewCount: 0, variations: [], createdAt: new Date(), updatedAt: new Date() }));
         await em.persistAndFlush(product);
         if (input.variations) {
             for (const variationInput of input.variations) {
@@ -103,8 +113,12 @@ let ProductResolver = class ProductResolver {
         }
         return product;
     }
+    async reviews(product, { em }) {
+        await em.populate(product, ["reviews"]);
+        return product.reviews;
+    }
     async productBySlug(slug, { em }) {
-        return await em.findOne(Products_1.Product, { slug }, { populate: ["variations", "category"] });
+        return await em.findOne(Products_1.Product, { slug }, { populate: ["variations", "category", 'reviews.user'] });
     }
     async productsByCategory(name, { em }) {
         const category = await em.findOne(Category_1.Category, { name });
@@ -162,6 +176,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ProductResolver.prototype, "filteredProducts", null);
 __decorate([
+    (0, type_graphql_1.Query)(() => [Products_1.Product]),
+    __param(0, (0, type_graphql_1.Arg)("limit", () => type_graphql_1.Int, { defaultValue: 5 })),
+    __param(1, (0, type_graphql_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], ProductResolver.prototype, "topRatedProducts", null);
+__decorate([
     (0, type_graphql_1.Mutation)(() => Products_1.Product),
     __param(0, (0, type_graphql_1.Arg)("input", () => ProductInput_1.ProductInput)),
     __param(1, (0, type_graphql_1.Ctx)()),
@@ -169,6 +191,14 @@ __decorate([
     __metadata("design:paramtypes", [ProductInput_1.ProductInput, Object]),
     __metadata("design:returntype", Promise)
 ], ProductResolver.prototype, "createProduct", null);
+__decorate([
+    (0, type_graphql_1.FieldResolver)(() => [Reviews_1.Review]),
+    __param(0, (0, type_graphql_1.Root)()),
+    __param(1, (0, type_graphql_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Products_1.Product, Object]),
+    __metadata("design:returntype", Promise)
+], ProductResolver.prototype, "reviews", null);
 __decorate([
     (0, type_graphql_1.Query)(() => Products_1.Product, { nullable: true }),
     __param(0, (0, type_graphql_1.Arg)("slug")),
@@ -186,6 +216,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ProductResolver.prototype, "productsByCategory", null);
 exports.ProductResolver = ProductResolver = __decorate([
-    (0, type_graphql_1.Resolver)()
+    (0, type_graphql_1.Resolver)(() => Products_1.Product)
 ], ProductResolver);
 //# sourceMappingURL=products.js.map

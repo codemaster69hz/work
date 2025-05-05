@@ -9,14 +9,14 @@ import { Category } from './entities/Category';
 import { Product } from './entities/Products';
 import { Admin } from "./entities/Admin";
 import { CartItem } from './entities/CartItem';
-// import { Review } from './entities/Reviews';
+import { Review } from './entities/Reviews';
 
 export default defineConfig({
   migrations: {
     path: path.join(__dirname, './migrations'),
     glob: '!(*.d).{js,ts}',  
   },
-  entities: [Post,User,Company,Product,ProductVariation,Category,Admin,CartItem],
+  entities: [Post,User,Company,Product,ProductVariation,Category,Admin,CartItem,Review],
   dbName: 'rkcdb',
   allowGlobalContext: true,
   password: '12345678',
