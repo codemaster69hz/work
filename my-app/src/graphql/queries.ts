@@ -65,6 +65,33 @@ export const MY_ADDRESSES = gql`
   }
 `;
 
+export const GET_WISHLISTS = gql `
+ query {
+  getWishlist {
+    id
+    createdAt
+    items {
+      product {
+        id
+        name
+        description
+        size
+        price
+        slug
+        averageRating
+        reviewCount
+      }
+      variation {
+      id
+      size
+      color
+      price
+      }  
+    }
+  }
+}
+`;
+
 export const GET_MY_ADDRESSES = gql`
   query MyAddresses {
     myAddresses {
@@ -157,6 +184,40 @@ export const ALL_PRODUCTS_QUERY = gql `
   }
 `;
 
+export const GET_PRODUCT_BY_ID = gql `
+ query($productId: String!) {
+  product(id: $productId) {
+    id
+    name
+    description
+    price
+    size
+    material
+    slug
+    createdAt
+    category {
+      id
+      name
+    }
+    variations {
+      name
+      price
+      size
+    }
+    averageRating
+    reviewCount
+    reviews {
+      comment
+      rating
+      sentiment
+    }
+    company {
+      cname
+    }
+  }
+}
+`;
+
 export const GET_PRODUCT_BY_SLUG = gql`
   query ProductBySlug($slug: String!) {
     productBySlug(slug: $slug) {
@@ -165,6 +226,7 @@ export const GET_PRODUCT_BY_SLUG = gql`
       description
       slug
       price
+      size
       weight
       averageRating
       reviewCount
@@ -244,12 +306,86 @@ export const GET_UNIQUE_SIZES = gql `
   }
 `;
 
+export const GET_SELLER_ORDERS = gql `
+ query {
+  getSellerOrders {
+    id
+    createdAt
+    items {
+      id
+      createdAt
+      price
+      quantity
+      product {
+        name
+        price
+      }
+    } user {
+      username
+      addresses {
+        country
+        state
+        city
+        streetAddress
+        streetAddress2
+        zipcode
+        }
+    }
+  }
+}
+`;
+
+export const GET_USER_ORDERS = gql`
+  query GetOrder($id: String!) {
+    getOrder(id: $id) {
+      id
+      status
+      total
+      createdAt
+      items {
+        id
+        quantity
+        price
+        product {
+          name
+        }
+        variation {
+          size
+        }
+      }
+    }
+  }
+`;
+
+export const GET_EVERY_ORDER_BY_USER = gql`
+  query GetOrders {
+    getOrders {
+      id
+      status
+      total
+      createdAt
+      items {
+        id
+        quantity
+        price
+        product {
+          name
+        }
+        variation {
+          size
+        }
+      }
+    }
+  }
+`;
+
 export const GET_SIMILAR_PRODUCTS = gql `
   query GetSimilarProducts($productId: String!, $category: String!) {
   getSimilarProducts(productId: $productId, category: $category) {
     category {
       name
     }
+    id  
     name
     slug
     price
@@ -286,8 +422,53 @@ export const GET_COMPANIES = gql `
     location
     createdAt
     products {
+      id
       name
       price
+      description
+      material
+      size
+      category{
+      name
+      }
+      averageRating
+      reviewCount
+    }
+  }
+}
+`;
+
+export const GET_CURRENTSELLER_PRODUCTS = gql `
+ query {
+  myProducts {
+    id
+    name
+    description
+    price
+    size
+    weight
+    material
+    slug
+    category {
+      id
+      name
+    }
+    variations {
+    id
+    color
+    size
+    price
+    }
+    createdAt
+    reviewCount
+    averageRating
+    reviews {
+      comment
+      sentiment
+      rating
+    }
+    company {
+      cname
     }
   }
 }
@@ -305,31 +486,54 @@ export const GET_ADMIN = gql `
 `;
 
 export const GET_PAGINATION = gql `
-  query GetPaginatedProducts(
-  $limit: Int!
-  $offset: Int!
-  $category: String
-  $minPrice: Float
-  $maxPrice: Float
-  $material: String
-) {
-  allProducts(
-    limit: $limit
-    offset: $offset
-    category: $category
-    minPrice: $minPrice
-    maxPrice: $maxPrice
-    material: $material
-  ) {
+ query PaginatedProducts($limit: Int!, $cursor: String) {
+  paginatedProducts(limit: $limit, cursor: $cursor) {
     products {
       id
       name
-      price
+      createdAt
+      description
+      material
+      averageRating
+      reviewCount
+      reviews {
+        comment
       }
+      size
+      price
+    }
+    hasMore
+    nextCursor
+  }
+}
+
+`;
+
+export const SELLER_PRODUCT_PAGINATION = gql`
+ query PaginatedMyProducts($limit: Int!, $offset: Int!) {
+  paginatedMyProducts(limit: $limit, offset: $offset) {
+    products {
+      id
+      name
+      createdAt
+      description
+      size
+      price
+      reviewCount
+      averageRating
+      reviews {
+      comment
+      }
+      category {
+      name
+      }
+    }
     total
+    hasMore
   }
 }
 `;
+
 
 export const GET_CART_ITEMS = gql`
   query GetCartItems {
@@ -396,6 +600,19 @@ export const GET_CART = gql`
       createdAt
       updatedAt
       total
+      user {
+      id
+      username
+      email
+      addresses {
+      country
+      state
+      city
+      streetAddress
+      streetAddress2
+      zipcode
+      }
+      }
       items {
         id
         quantity

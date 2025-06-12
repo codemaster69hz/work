@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -6,7 +7,7 @@ import { useQuery } from "@apollo/client";
 import { GET_USERS, GET_COMPANIES, ALL_PRODUCTS_QUERY, GET_ADMIN} from "../../graphql/queries";
 import Adheader from "@/components/Adheader/page";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import LoadingPage from "@/components/LoadingPage";
 
 export default function AdminDashboard() {
   const { data: adminData, loading: adminLoading } = useQuery(GET_ADMIN);
@@ -34,14 +35,14 @@ export default function AdminDashboard() {
     });
   };
 
-  useEffect(() => {
-    if (!adminLoading && (!adminData || !adminData.getadmin)) {
-      redirect("/"); // redirect to login or home
-    }
-  }, [adminData, adminLoading]);
+  // useEffect(() => {
+  //   if (!adminLoading && (!adminData || !adminData.getadmin)) {
+  //     redirect("/"); // redirect to login or home
+  //   }
+  // }, [adminData, adminLoading]);
 
   if (usersLoading || companiesLoading || productsLoading) {
-    return <div className="p-4 text-center">Loading...</div>;
+    return <LoadingPage/>;
   }
 
   const filteredAndSortedUsers = [...(usersData?.getUser || [])]

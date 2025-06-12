@@ -2,8 +2,10 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import { FILTERED_PRODUCTS_QUERY, ALL_PRODUCTS_QUERY } from "../../graphql/queries";
+import { ADD_TO_WISHLIST } from "../../graphql/mutations";
+import { GET_WISHLISTS } from "../../graphql/queries"; // adjust path if needed
 import { useCurrency } from "../../providers/CurrencyContext";
 import { convertPrice } from "../../lib/currencyConverter";
 import { formatCurrency } from "../../lib/formatCurrency";
@@ -12,17 +14,21 @@ import { StarIcon } from "@heroicons/react/24/solid";
 import { HeartIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import TopRatedProducts from "./topratedprod";
+import toast from "react-hot-toast";
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
   const { currency } = useCurrency();
-  const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
-
+  const [, setHoveredProduct] = useState<string | null>(null);
+  const { data: wishlistData } = useQuery(GET_WISHLISTS);
+  const wishlistItems = wishlistData?.getWishlist?.items || [];
   const searchQuery = searchParams.get("query");
   const minPrice = searchParams.get("minPrice");
   const maxPrice = searchParams.get("maxPrice");
   const material = searchParams.get("material");
   const category = searchParams.get("category");
+
+  const [ addtoWishlist ] = useMutation(ADD_TO_WISHLIST);
 
   const { data, loading, error } = useQuery(
     searchQuery || minPrice || maxPrice || material || category
@@ -39,6 +45,25 @@ export default function ProductsPage() {
     }
   );
 
+  const isInWishlist = (productId: string) => {
+    return wishlistItems.some((item: any) => item.product.id === productId);
+  };
+  
+
+  const wishlist = async (productId: string)=> {
+    try {
+      await addtoWishlist({
+        variables:  {
+          productId,
+        },
+      });
+      toast.success("Added to wishlist");
+    } catch (err){
+      toast.error("Failed to add to wishlist");
+      console.log(err)
+    }
+  }
+
   const products = data?.filteredProducts || data?.allProducts || [];
   const isSearching = searchQuery || minPrice || maxPrice || material || category;
 
@@ -46,7 +71,7 @@ export default function ProductsPage() {
     <div className="bg-gray-50">
       <main className="px-4 sm:px-6 pb-12 max-w-7xl mx-auto">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 pt-5">
+          <h1 className="text-3xl font-bold text-orange-900 mb-2 pt-5">
             {searchQuery ? `Search Results for "${searchQuery}"` : "Our Collection"}
           </h1>
           <p className="text-gray-600">
@@ -95,21 +120,32 @@ export default function ProductsPage() {
             {products.map((product: any) => (
               <div
                 key={product.id}
-                className="group relative bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 border border-gray-100"
+                className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
                 onMouseEnter={() => setHoveredProduct(product.id)}
                 onMouseLeave={() => setHoveredProduct(null)}
               >
-                <button
-                  className={`absolute top-3 right-3 z-10 p-2 rounded-full bg-white shadow-md transition-all ${hoveredProduct === product.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-                  aria-label="Add to wishlist"
-                >
-                  <HeartIcon className="h-5 w-5 text-gray-400 hover:text-red-500" />
-                </button>
+                <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      wishlist(product.id);
+                    }}
+                    className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/90 hover:bg-white transition-all shadow-sm"
+                    aria-label={isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}
+                  >
+                    <HeartIcon
+                      className={`h-5 w-5 ${
+                        isInWishlist(product.id)
+                          ? 'text-red-500 fill-red-500 hover:text-red-600'
+                          : 'text-gray-400 hover:text-red-500'
+                      } transition-colors`}
+                    />
+                  </button>
 
                 <Link href={`/products/${product.slug}`} className="block">
-                  <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                  <div className="aspect-square bg-gray-50 relative overflow-hidden rounded-t-2xl">
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-gray-400 text-sm">Product Image</span>
+                      <span className="text-gray-400 text-sm">
+                         Image</span>
                     </div>
                     {new Date(product.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) && (
                       <span className="absolute top-2 left-2 bg-green-500 text-white text-xs font-medium px-2 py-1 rounded-full">
@@ -122,9 +158,9 @@ export default function ProductsPage() {
                 <div className="p-4">
                   <div className="flex justify-between items-start">
                     <Link href={`/products/${product.slug}`} className="block">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1 hover:text-blue-600 transition">
-                        {product.name}
-                      </h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1 hover:text-blue-600 transition truncate w-full">
+                      {product.name}
+                    </h3>
                     </Link>
                   </div>
 
@@ -141,8 +177,6 @@ export default function ProductsPage() {
                       {product.averageRating?.toFixed(1) || '0.0'} ({product.reviewCount || 0})
                     </span>
                   </div>
-
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-3">{product.description}</p>
 
                   <div className="flex justify-between items-center">
                     <div>

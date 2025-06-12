@@ -43,7 +43,7 @@ export default function Slidebar() {
     <aside
       className={`${
         isOpen ? "w-64" : "w-16"
-      } h-screen bg-gray-800 text-white p-4 flex flex-col transition-all duration-300 ease-in-out relative`}
+      } h-screen bg-gray-600 text-white p-4 flex flex-col transition-all duration-300 ease-in-out relative`}
     >
 
       {/* Toggle Button */}

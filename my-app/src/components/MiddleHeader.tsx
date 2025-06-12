@@ -35,19 +35,19 @@ export default function MiddleHeader() {
         />
         <button
           type="submit"
-          className="bg-blue-600 text-white px-9 py-4 rounded-full hover:bg-blue-700 text-md flex items-center gap-1"
+          className="bg-red-300 text-white px-9 py-4 rounded-full hover:bg-red-350 text-md flex items-center gap-1"
         >
           <Search className="w-4 h-4" />
           Search
         </button>
       </form>
 
-      <div className="flex items-center gap-4">
-        <Link href="/wishlist" className="hover:text-blue-600">
-          <Heart className="w-5 h-5" />
+      <div className="flex items-center gap-3">
+        <Link href="/wishlist" className="hover:text-red-300">
+          <Heart className="w-6 h-6" />
         </Link>
-        <Link href="/cart" className="hover:text-blue-600">
-          <ShoppingCart className="w-5 h-5" />
+        <Link href="/cart" className="hover:text-red-300">
+          <ShoppingCart className="w-6 h-6" />
         </Link>
       </div>
     </div>

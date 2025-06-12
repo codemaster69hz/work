@@ -107,21 +107,22 @@ export const UPDATE_USER_FIELDS = gql`
 `;
 
 export const UPDATE_PRODUCT_DETAILS = gql`
- mutation($input: UpdateProductFields!, $productid: String!) {
-  updateProducts(input: $input, productid: $productid) {
+ mutation($input: UpdateProductFields!, $updateProductsId: String!) {
+  updateProducts(input: $input, id: $updateProductsId) {
+    id
     name
-    price
     description
-    material
+    price
     size
     weight
+    material
   }
 }
 `;
 
 export const UPDATE_PRODUCTVAR_DETAILS = gql`
- mutation($input: UpdateProductVariations!, $variationid: String!) {
-  updateProductVar(input: $input, variationid: $variationid) {
+ mutation($input: UpdateProductVariations!, $updateProductVarId: String!) {
+  updateProductVar(input: $input, id: $updateProductVarId) {
     size
     color
     price
@@ -239,6 +240,34 @@ export const LOGIN_ADMIN = gql `
   }
 `;
 
+export const ADD_TO_WISHLIST = gql `
+  mutation($productId: String!){
+    addtoWishlist(productId: $productId) {
+      id
+      createdAt
+      product {
+        id
+          name
+          description
+          price
+          averageRating
+          size
+          slug
+          reviewCount
+      }
+    }
+  }
+`;
+
+export const UPDATE_ORDER_STATUS = gql`
+  mutation UpdateOrderStatus($orderId: String!, $status: OrderStatus!) {
+    updateOrderStatus(orderId: $orderId, status: $status) {
+      id
+      status
+    }
+  }
+`;
+
 export const CREATE_USER_ADDRESS = gql`
   mutation CreateUserAddress($input: UserAddressInput!) {
     createUserAddress(input: $input) {
@@ -269,6 +298,56 @@ export const REGISTER_ADMIN = gql `
     }
   }
 `;
+
+export const CREATE_PRODUCT_VARIATION = gql `
+ mutation($productId: String!, $price: Float!, $color: String!, $size: String!) {
+  createProductVariation(productId: $productId, price: $price, color: $color, size: $size) {
+    price
+    size
+    color
+  }
+}
+`;
+
+export const CREATE_ORDER = gql`
+  mutation {
+    createOrder {
+      id
+      total
+      status
+      createdAt
+      estimatedDeliveryDate
+      updatedAt
+      user {
+        id
+        username
+        addresses {
+          country
+          state
+          city
+          streetAddress
+          streetAddress2
+          zipcode
+        }
+      }
+      items {
+        id
+        quantity
+        price
+        size
+        product {
+          id
+          name
+        }
+        variation {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
 
 export const VERIFY_ADMINCODE = gql `
   mutation {

@@ -7,9 +7,10 @@ import Link from "next/link";
 import { HeartIcon, StarIcon } from "lucide-react";
 import { formatCurrency } from "../../../lib/formatCurrency"; // Ensure these exist or replace accordingly
 import { convertPrice } from "../../../lib/currencyConverter";
+import { useCurrency } from "../../../providers/CurrencyContext";
 
 export default function CategoryPage({ params }: { params: { slug: string } }) {
-  const currency = "INR"; // Replace with your dynamic currency logic
+  const  { currency } = useCurrency(); // Replace with your dynamic currency logic
 
   // Fetch category data
   const { data: categoryData, loading: categoryLoading, error: categoryError } = useQuery(

@@ -6,6 +6,7 @@ import Carousel from "@/components/Carousel";
 import Head from "next/head";
 import ProductsPage from "../app/products/page";
 import Footer from "@/components/Footer";
+import OffersPage from "./offers/page";
 
 export default function Home() {
     
@@ -18,6 +19,7 @@ export default function Home() {
       </Head>
       <Bheader />
         <Carousel/>
+        <OffersPage/>
       <div className="flex min-h-screen bg-white text-gray-900" style={{ fontFamily: 'Gidole, sans-serif' }}>
         {/* Main Content */}
         <main className="flex-1 p-6">

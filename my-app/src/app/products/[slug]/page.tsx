@@ -448,11 +448,11 @@ export default function ProductPage() {
                         </tr>
                         <tr>
                           <td className="py-2 text-sm font-medium text-gray-500">Weight</td>
-                          <td className="py-2 text-sm text-gray-900">{product.weight} g</td>
+                          <td className="py-2 text-sm text-gray-900">{product.weight}</td>
                         </tr>
                         <tr>
-                          <td className="py-2 text-sm font-medium text-gray-500">Dimensions</td>
-                          <td className="py-2 text-sm text-gray-900">10 × 5 × 3 cm</td>
+                          <td className="py-2 text-sm font-medium text-gray-500">Size</td>
+                          <td className="py-2 text-sm text-gray-900">{product.size}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -633,38 +633,47 @@ export default function ProductPage() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {similarData.getSimilarProducts.map((similarProduct: any) => (
                   <Link key={similarProduct.id} href={`/products/${similarProduct.slug}`}>
-                    <div className="group bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                      <div className="aspect-square bg-gray-100 relative">
-                        <img
-                          src="https://via.placeholder.com/400x400?text=Product"
-                          alt={similarProduct.name}
-                          className="w-full h-full object-cover"
-                        />
-                        <button className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
-                          <HeartIcon className="h-5 w-5 text-gray-400" />
-                        </button>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
-                          {similarProduct.name}
-                        </h3>
-                        <div className="mt-1 flex items-center">
-                          <div className="flex">
-                            {[0, 1, 2, 3, 4].map((averageRating) => (
-                              <StarIcon
-                                key={averageRating}
-                                className={`h-4 w-4 ${averageRating < 4 ? 'text-yellow-400' : 'text-gray-300'}`}
-                              />
-                            ))}
-                          </div>
-                          <span className="ml-1 text-xs text-gray-500">({product.averageRating})</span>
+                  <div className="group bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                    <div className="aspect-square bg-gray-100 relative">
+                      <img
+                        src="https://via.placeholder.com/400x400?text=Product"
+                        alt={similarProduct.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <button className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
+                        <HeartIcon className="h-5 w-5 text-gray-400" />
+                      </button>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {similarProduct.name}
+                      </h3>
+                      <div className="mt-1 flex items-center">
+                        <div className="flex">
+                          {[0, 1, 2, 3, 4].map((averageRating) => (
+                            <StarIcon
+                              key={averageRating}
+                              className={`h-4 w-4 ${averageRating < 4 ? 'text-yellow-400' : 'text-gray-300'}`}
+                            />
+                          ))}
                         </div>
-                        <p className="mt-2 text-lg font-semibold text-gray-900">
+                        <span className="ml-1 text-xs text-gray-500">({similarProduct.averageRating})</span>
+                      </div>
+                
+                      {/* Flex row for price and material */}
+                      <div className="mt-2 flex justify-between items-center">
+                        <p className="text-lg font-semibold text-gray-900">
                           {formatCurrency(convertPrice(similarProduct.price, currency), currency)}
                         </p>
+                        <span className="inline-flex px-3.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {similarProduct.material}
+                        </span>
                       </div>
                     </div>
-                  </Link>
+                  </div>
+                </Link>
+                
+                
                 ))}
               </div>
             ) : (

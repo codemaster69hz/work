@@ -3,18 +3,47 @@
 
 import { useQuery } from "@apollo/client";
 import { useState } from "react";
-import { ME_QUERY } from "../../graphql/queries";
-import { redirect } from "next/navigation";
+import { SELLER_PRODUCT_PAGINATION } from "../../graphql/queries";
 import Slider from "../../components/sliderforSeller";
 import TopHeader from "../../components/TopHeader";
 import Footer from "../../components/Footer";
 import SearchBar from "../../components/SearchBar";
+import { Edit3Icon } from "lucide-react";
+// import { redirect } from "next/navigation";
+// import { ME_QUERY } from "@/graphql/mutations";
 
 export default function Dashboard() {
-  const { data, loading } = useQuery(ME_QUERY);
+  const [offset, setOffset] = useState(0);
+  const limit = 10;
+
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null);
   const [sortDate, setSortDate] = useState<"asc" | "desc" | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+
+  const { data, loading } = useQuery(SELLER_PRODUCT_PAGINATION ,{
+    variables: { limit, offset },
+    fetchPolicy: "cache-and-network",
+  });
+
+
+  // const {
+  //   data: sellerData,
+  //   error: sellerError,
+  //   loading: sellerLoading,
+  // } = useQuery(ME_QUERY);
+
+  // if (!sellerLoading && (sellerError || !sellerData?.me)) {
+  //   redirect("/auth/login"); // or homepage
+  // }
+
+  const paginatedData = data?.paginatedMyProducts;
+  const products = paginatedData?.products || [];
+  const totalCount = paginatedData?.total || 0;
+
+  const filteredProducts = products.filter((p: any) =>
+    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -24,134 +53,181 @@ export default function Dashboard() {
     );
   }
 
-  if (!data?.me) {
-    redirect("/auth/selllogin");
-  }
-
-  // Filter products by search term
-  const filteredProducts = data.me.products.filter((p: any) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Sort by price
-  if (sortOrder === "asc") {
-    filteredProducts.sort((a: { price: number; }, b: { price: number; }) => a.price - b.price);
-  } else if (sortOrder === "desc") {
-    filteredProducts.sort((a: { price: number; }, b: { price: number; }) => b.price - a.price);
-  }
-
-  // Sort by date
-  if (sortDate === "asc") {
-    filteredProducts.sort((a: { createdAt: any; }, b: { createdAt: any; }) => Number(a.createdAt) - Number(b.createdAt));
-  } else if (sortDate === "desc") {
-    filteredProducts.sort((a: { createdAt: any; }, b: { createdAt: any; }) => Number(b.createdAt) - Number(a.createdAt));
-  }
-
-  const toggleSort = () => {
-    setSortOrder((prev) =>
-      prev === "asc" ? "desc" : prev === "desc" ? null : "asc"
-    );
-    setSortDate((prev) =>
-      prev === "asc" ? "desc" : prev === "desc" ? null : "asc"
+  const handleCheckboxChange = (id: string) => {
+    setSelectedProducts((prev) =>
+      prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
     );
   };
 
-  const renderSortIcon = () => {
-    if (sortOrder === "asc" || sortDate === "asc") return "↑";
-    if (sortOrder === "desc" || sortDate === "desc") return "↓";
+  const handleBulkDelete = () => {
+    console.log("Deleting selected products:", selectedProducts);
+    setSelectedProducts([]);
+  };
+
+  // Sort logic
+  if (sortOrder) {
+    filteredProducts.sort((a: any, b: any) =>
+      sortOrder === "asc" ? a.price - b.price : b.price - a.price
+    );
+  } else if (sortDate) {
+    filteredProducts.sort((a: any, b: any) =>
+      sortDate === "asc"
+        ? Number(a.createdAt) - Number(b.createdAt)
+        : Number(b.createdAt) - Number(a.createdAt)
+    );
+  }
+
+  const togglePriceSort = () => {
+    setSortOrder((prev) =>
+      prev === "asc" ? "desc" : prev === "desc" ? null : "asc"
+    );
+    setSortDate(null);
+  };
+
+  const toggleDateSort = () => {
+    setSortDate((prev) =>
+      prev === "asc" ? "desc" : prev === "desc" ? null : "asc"
+    );
+    setSortOrder(null);
+  };
+
+  const renderSortIcon = (field: "price" | "date") => {
+    const direction = field === "price" ? sortOrder : sortDate;
+    if (direction === "asc") return "↑";
+    if (direction === "desc") return "↓";
     return "⇅";
+  };
+
+  const allSelected =
+    filteredProducts.length > 0 &&
+    filteredProducts.every((product: any) => selectedProducts.includes(product.id));
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      setSelectedProducts([]);
+    } else {
+      const allIds = filteredProducts.map((product: any) => product.id);
+      setSelectedProducts(allIds);
+    }
   };
 
   return (
     <>
       <TopHeader />
-      {/* <MiddleHeader /> */}
       <SearchBar onSellerSearch={setSearchTerm} />
       <div className="h-screen flex flex-col bg-gray-50">
         <div className="flex flex-1 overflow-hidden">
-          {/* Sidebar */}
-          <Slider/>
-          {/* Main Content */}
+          <Slider />
           <main className="flex-1 p-6 bg-white overflow-x-auto">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              Welcome, {data.me.username}!
-            </h1>
-            <p className="text-gray-600 mb-4">
-              Email: {data.me.email} | Verified:{" "}
-              <span
-                className={
-                  data.me.isEmailVerified ? "text-green-600" : "text-red-600"
-                }
-              >
-                {data.me.isEmailVerified ? "Yes" : "No"}
-              </span>
-            </p>
-
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               Your Products
-            </h2>
+            </h1>
+
+            {selectedProducts.length > 0 && (
+              <button
+                className="mb-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm"
+                onClick={handleBulkDelete}
+              >
+                Delete Selected Products
+              </button>
+            )}
 
             {filteredProducts.length > 0 ? (
-              <div className="overflow-x-auto">
-                <div className="min-w-[1000px] bg-white shadow-md rounded-xl border border-gray-200">
-                  <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-                    <thead className="bg-gray-100 text-gray-600 font-semibold">
-                      <tr>
-                        <th className="p-3">Sr No</th>
-                        <th className="p-3">Image</th>
-                        <th className="p-3">Name</th>
-                        <th
-                          className="p-3 cursor-pointer select-none"
-                          onClick={toggleSort}
-                        >
-                          Created At{" "}
-                          <span className="ml-1">{renderSortIcon()}</span>
-                        </th>
-                        <th
-                          className="p-3 cursor-pointer select-none"
-                          onClick={toggleSort}
-                        >
-                          Price ($) <span className="ml-1">{renderSortIcon()}</span>
-                        </th>
-                        <th className="p-3">Category</th>
-                        <th className="p-3">Actions</th>
+              <div className="overflow-auto max-h-[70vh]">
+                <table className="min-w-full bg-white shadow-md rounded-xl border border-gray-200">
+                  <thead className="bg-gray-100 text-gray-600 font-semibold sticky top-0 z-10 text-sm text-left">
+                    <tr>
+                      <th className="p-3">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={handleSelectAll}
+                        />
+                      </th>
+                      <th className="p-3">Sr No</th>
+                      <th className="p-3">Image</th>
+                      <th className="p-3">Name</th>
+                      <th className="p-3 cursor-pointer" onClick={toggleDateSort}>
+                        Created At <span className="ml-1">{renderSortIcon("date")}</span>
+                      </th>
+                      <th className="p-3 cursor-pointer" onClick={togglePriceSort}>
+                        Price ($) <span className="ml-1">{renderSortIcon("price")}</span>
+                      </th>
+                      <th className="p-3">Category</th>
+                      <th className="p-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-700">
+                    {filteredProducts.map((product: any, idx: number) => (
+                      <tr key={product.id} className="hover:bg-gray-50 transition">
+                        <td className="p-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedProducts.includes(product.id)}
+                            onChange={() => handleCheckboxChange(product.id)}
+                          />
+                        </td>
+                        <td className="p-3">{offset + idx + 1}</td>
+                        <td className="p-3">
+                          <div className="w-16 h-16 bg-gray-100 flex items-center justify-center rounded-md text-xs text-gray-400">
+                            Image
+                          </div>
+                        </td>
+                        <td className="p-3 font-medium">{product.name}</td>
+                        <td className="p-3">
+                          {new Date(Number(product.createdAt)).toLocaleDateString()}
+                        </td>
+                        <td className="p-3 font-semibold">${product.price}</td>
+                        <td className="p-3">{product.category?.name || "-"}</td>
+                        <td className="p-3">
+                          {/* <button className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-blue-600 text-xs transition"> */}
+                          <a
+                            href={`/editproduct/${product.id}`}
+                            className="
+                              flex items-center gap-2 
+                              px-3 py-2 
+                              bg-black-50 text-black-600 
+                              rounded-lg 
+                              border border-blue-200 
+                              hover:text-blue-700 
+                              transition-all duration-200 
+                              group
+                            "
+                            title="Edit"
+                            >
+                            <Edit3Icon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                            <span className="text-sm font-medium">Edit</span>
+                            </a>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="text-gray-700">
-                      {filteredProducts.map((product: any, idx: number) => (
-                        <tr
-                          key={product.id}
-                          className="hover:bg-gray-50 transition"
-                        >
-                          <td className="p-3">{idx + 1}</td>
-                          <td className="p-3">
-                            <div className="w-16 h-16 bg-gray-100 flex items-center justify-center rounded-md text-xs text-gray-400">
-                              Image
-                            </div>
-                          </td>
-                          <td className="p-3 font-medium">{product.name}</td>
-                          <td className="p-3">
-                            {new Date(Number(product.createdAt)).toLocaleDateString()}
-                          </td>
-                          <td className="p-3 font-semibold">${product.price}</td>
-                          <td className="p-3">{product.category?.name || "-"}</td>
-                          <td className="p-3 space-x-2">
-                            <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs transition">
-                              Edit
-                            </button>
-                            <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs transition">
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <p className="text-gray-500">No products found.</p>
             )}
+
+            {/* Pagination Controls */}
+            <div className="flex justify-between mt-6">
+              <button
+                disabled={offset === 0}
+                onClick={() => setOffset(Math.max(offset - limit, 0))}
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-gray-600 text-sm">
+                Showing {offset + 1} - {Math.min(offset + limit, totalCount)} of {totalCount}
+              </span>
+              <button
+                disabled={offset + limit >= totalCount}
+                onClick={() => setOffset(offset + limit)}
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </main>
         </div>
       </div>
